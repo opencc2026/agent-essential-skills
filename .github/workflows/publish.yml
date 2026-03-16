@@ -1,4 +1,4 @@
-name: Simple Publish
+name: Publish to ClawHub
 
 on:
   workflow_dispatch:
