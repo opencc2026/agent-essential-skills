@@ -1,44 +1,58 @@
-name: Publish to ClawHub
+name: Test ClawHub Token
 
-on:
-  workflow_dispatch:
-  push:
-    branches: [ main ]
+on: workflow_dispatch
 
 jobs:
-  publish:
+  test:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
+    - name: Check Token Setup
+      run: |
+        echo "🔍 检查CLAWHUB_TOKEN设置..."
+        if [ -z "${{ secrets.CLAWHUB_TOKEN }}" ]; then
+          echo "❌ CLAWHUB_TOKEN未设置"
+          echo "请在仓库Settings → Secrets → Actions中添加CLAWHUB_TOKEN"
+          exit 1
+        else
+          echo "✅ CLAWHUB_TOKEN已设置"
+          echo "Token长度: ${#CLAWHUB_TOKEN} 字符"
+        fi
     
     - name: Install clawhub
-      run: npm install -g clawhub
+      run: |
+        echo "📦 安装clawhub..."
+        npm install -g clawhub
+        echo "✅ clawhub已安装"
     
-    - name: Login to ClawHub
+    - name: Test Token Login
       env:
         CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
       run: |
-        if [ -z "$CLAWHUB_TOKEN" ]; then
-          echo "ERROR: CLAWHUB_TOKEN is not set"
-          echo "Please add CLAWHUB_TOKEN to repository secrets"
-          exit 1
-        fi
-        echo "$CLAWHUB_TOKEN" | clawhub login --token
-        echo "✅ Logged in to ClawHub"
-    
-    - name: Publish to ClawHub
-      run: |
-        echo "📦 Publishing to ClawHub..."
-        if clawhub publish .; then
-          echo "✅ Successfully published!"
+        echo "🔐 测试Token登录..."
+        echo "$CLAWHUB_TOKEN" | clawhub login --token 2>&1
+        
+        if [ $? -eq 0 ]; then
+          echo "✅ Token登录成功"
+          
+          # 测试基本命令
+          echo "测试clawhub命令..."
+          clawhub whoami 2>&1 || echo "⚠️  whoami命令失败，但登录成功"
         else
-          echo "❌ Failed to publish"
+          echo "❌ Token登录失败"
+          echo "可能的原因："
+          echo "1. Token无效或已过期"
+          echo "2. Token没有足够权限"
+          echo "3. 网络问题"
           exit 1
         fi
+    
+    - name: Success Message
+      if: success()
+      run: |
+        echo "🎉 所有测试通过！"
+        echo "CLAWHUB_TOKEN有效，可以用于发布"
+        echo ""
+        echo "下一步："
+        echo "1. 使用完整的工作流进行发布"
+        echo "2. 或者手动运行：clawhub publish ."
