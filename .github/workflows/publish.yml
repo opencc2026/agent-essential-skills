@@ -1,12 +1,9 @@
-name: Publish to ClawHub
+name: Debug ClawHub Publish
 
-on:
-  workflow_dispatch:
-  push:
-    branches: [ main ]
+on: workflow_dispatch
 
 jobs:
-  publish:
+  debug:
     runs-on: ubuntu-latest
     
     steps:
@@ -14,26 +11,117 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
     
-    # 2. 安装clawhub
-    - name: Install clawhub
-      run: npm install -g clawhub
+    # 2. 显示项目结构
+    - name: Show project structure
+      run: |
+        echo "📁 项目结构:"
+        find . -type f -name "*.md" -o -name "*.json" -o -name "*.js" | sort
+        echo ""
+        echo "📄 SKILL.md 内容:"
+        head -20 SKILL.md
+        echo ""
+        echo "📦 package.json 内容:"
+        cat package.json
     
-    # 3. 使用Token登录并发布
-    - name: Publish to ClawHub
+    # 3. 安装clawhub
+    - name: Install clawhub
+      run: |
+        echo "📦 安装clawhub..."
+        npm install -g clawhub
+        echo "clawhub版本:"
+        clawhub --version || echo "无法获取版本"
+    
+    # 4. 测试Token登录
+    - name: Test Token Login
       env:
         CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
       run: |
-        # 检查Token是否设置
-        if [ -z "$CLAWHUB_TOKEN" ]; then
-          echo "❌ 错误: CLAWHUB_TOKEN未设置"
-          echo "请在仓库Settings → Secrets → Actions中添加CLAWHUB_TOKEN"
+        echo "🔐 测试Token登录..."
+        echo "Token长度: ${#CLAWHUB_TOKEN} 字符"
+        echo "Token前10位: ${CLAWHUB_TOKEN:0:10}..."
+        
+        echo "$CLAWHUB_TOKEN" | clawhub login --token 2>&1
+        LOGIN_RESULT=$?
+        
+        if [ $LOGIN_RESULT -eq 0 ]; then
+          echo "✅ Token登录成功"
+          
+          # 测试用户信息
+          echo "👤 用户信息:"
+          clawhub whoami 2>&1 || echo "无法获取用户信息"
+        else
+          echo "❌ Token登录失败"
           exit 1
         fi
+    
+    # 5. 测试发布（不实际发布）
+    - name: Test Publish (Dry Run)
+      run: |
+        echo "🧪 测试发布（模拟）..."
+        echo "当前目录: $(pwd)"
+        echo "文件列表:"
+        ls -la
         
-        # 登录ClawHub
-        echo "🔐 登录ClawHub..."
-        echo "$CLAWHUB_TOKEN" | clawhub login --token
+        # 检查技能结构
+        echo ""
+        echo "🔍 检查技能结构:"
+        if [ -f "SKILL.md" ]; then
+          echo "✅ SKILL.md 存在"
+          # 提取技能名称
+          SKILL_NAME=$(grep -m1 "^name:" SKILL.md | cut -d: -f2 | tr -d ' ' | tr -d '\r' || echo "未知")
+          echo "   技能名称: $SKILL_NAME"
+        else
+          echo "❌ SKILL.md 不存在"
+        fi
         
-        # 发布到ClawHub
-        echo "📦 发布到ClawHub..."
-        clawhub publish .
+        if [ -f "package.json" ]; then
+          echo "✅ package.json 存在"
+          VERSION=$(node -p "require('./package.json').version" 2>/dev/null || echo "未知")
+          echo "   版本: $VERSION"
+        else
+          echo "❌ package.json 不存在"
+        fi
+        
+        # 模拟发布命令
+        echo ""
+        echo "🚀 模拟发布命令:"
+        echo "clawhub publish . --dry-run 2>&1 || echo 'dry-run failed'"
+    
+    # 6. 实际测试发布（但捕获错误）
+    - name: Test Actual Publish
+      run: |
+        echo "🎯 实际测试发布..."
+        echo "运行: clawhub publish ."
+        
+        # 尝试发布，但捕获所有输出
+        set +e
+        OUTPUT=$(clawhub publish . 2>&1)
+        PUBLISH_RESULT=$?
+        set -e
+        
+        echo "退出代码: $PUBLISH_RESULT"
+        echo "输出:"
+        echo "$OUTPUT"
+        
+        if [ $PUBLISH_RESULT -eq 0 ]; then
+          echo "✅ 发布成功！"
+        else
+          echo "❌ 发布失败"
+          echo "错误详情已在上方显示"
+        fi
+    
+    # 7. 总结
+    - name: Debug Summary
+      if: always()
+      run: |
+        echo ""
+        echo "📋 调试总结"
+        echo "=========="
+        echo "时间: $(date)"
+        echo "仓库: ${{ github.repository }}"
+        echo ""
+        echo "🎯 下一步:"
+        echo "1. 查看上面的输出信息"
+        echo "2. 根据错误信息采取相应行动"
+        echo "3. 如果需要，修改技能文件"
+        echo "4. 重新运行发布工作流"
