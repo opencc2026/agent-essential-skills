@@ -36,7 +36,7 @@ jobs:
     - name: Install dependencies
       run: |
         npm install -g clawhub
-        npm ci
+        npm install
     
     - name: Run tests
       run: |
