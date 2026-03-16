@@ -1,0 +1,121 @@
+name: Publish to ClawHub
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'SKILL.md'
+      - 'package.json'
+  pull_request:
+    branches: [ main ]
+    types: [closed]
+    paths:
+      - 'src/**'
+      - 'SKILL.md'
+      - 'package.json'
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  publish:
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true) || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: |
+        npm install -g clawhub
+        npm ci
+    
+    - name: Run tests
+      run: |
+        if [ -f "package.json" ] && grep -q '"test"' package.json; then
+          npm test
+        else
+          echo "No tests configured"
+        fi
+    
+    - name: Validate Skill
+      run: |
+        echo "Validating Skill structure..."
+        if [ ! -f "SKILL.md" ]; then
+          echo "❌ SKILL.md not found"
+          exit 1
+        fi
+        
+        if [ ! -f "package.json" ]; then
+          echo "❌ package.json not found"
+          exit 1
+        fi
+        
+        echo "✅ Skill structure validated"
+    
+    - name: Login to ClawHub
+      env:
+        CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
+      run: |
+        if [ -z "$CLAWHUB_TOKEN" ]; then
+          echo "❌ CLAWHUB_TOKEN not set"
+          echo "Please add CLAWHUB_TOKEN to repository secrets"
+          exit 1
+        fi
+        
+        echo "Logging in to ClawHub..."
+        echo "$CLAWHUB_TOKEN" | clawhub login --token
+        
+        # Verify login
+        clawhub whoami || echo "⚠️ Unable to verify login, continuing anyway"
+    
+    - name: Publish to ClawHub
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        echo "Publishing to ClawHub..."
+        
+        # Get current version from package.json
+        VERSION=$(node -p "require('./package.json').version")
+        echo "Publishing version: $VERSION"
+        
+        # Publish the skill
+        if clawhub publish .; then
+          echo "✅ Successfully published to ClawHub"
+          
+          # Create GitHub release if this is a version bump
+          if [[ "${{ github.event.head_commit.message }}" =~ [vV]?[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+            echo "Creating GitHub release for version $VERSION"
+            gh release create "v$VERSION" \
+              --title "v$VERSION" \
+              --notes "Auto-generated release for ClawHub publication" \
+              --target main
+          fi
+        else
+          echo "❌ Failed to publish to ClawHub"
+          exit 1
+        fi
+    
+    - name: Notify on success
+      if: success()
+      run: |
+        echo "🎉 Skill published successfully!"
+        echo "Repository: ${{ github.repository }}"
+        echo "Version: $(node -p "require('./package.json').version")"
+        echo "Commit: ${{ github.sha }}"
+    
+    - name: Notify on failure
+      if: failure()
+      run: |
+        echo "❌ Publication failed"
+        echo "Please check the logs above for details"
+        echo "Repository: ${{ github.repository }}"
+        echo "Commit: ${{ github.sha }}"

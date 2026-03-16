@@ -1,6 +1,11 @@
 # Agent Essential Skills
 
-一个帮助用户快速入门Agent开发的技能包集合。
+![ClawHub](https://img.shields.io/clawhub/v/agent-essential-skills)
+![GitHub Actions](https://github.com/opencc2026/agent-essential-skills/actions/workflows/publish-to-clawhub.yml/badge.svg)
+![License](https://img.shields.io/github/license/opencc2026/agent-essential-skills)
+![Node Version](https://img.shields.io/badge/node-%3E%3D14.0.0-brightgreen)
+
+一个包含Agent开发必备基础技能的技能包，帮助开发者快速构建功能完整的AI Agent。
 
 ## 🎯 功能概述
 
@@ -13,6 +18,7 @@
 - 命令行执行
 - 网络搜索和获取
 - 会话管理
+- 内存管理
 
 ### 2. 开发辅助技能
 - 代码分析和审查
@@ -31,34 +37,51 @@
 ### 安装
 ```bash
 # 使用clawhub安装
-clawhub install [你的用户名]/agent-essential-skills
+clawhub install opencc2026/agent-essential-skills
 
 # 或者直接克隆
-git clone https://github.com/[你的用户名]/agent-essential-skills.git
+git clone https://github.com/opencc2026/agent-essential-skills.git
+cd agent-essential-skills
+npm install
 ```
 
 ### 使用示例
 ```javascript
-// 示例：使用基础文件操作
-const { FileManager } = require('./skills/file-manager');
-const fm = new FileManager();
-await fm.readFile('path/to/file.txt');
+// 导入技能包
+const AgentEssentials = require('agent-essential-skills');
+
+// 创建技能实例
+const essentials = new AgentEssentials();
+
+// 初始化
+await essentials.initialize();
+
+// 使用文件操作技能
+const content = await essentials.getFileOperations().readFile('path/to/file.txt');
+
+// 使用命令行技能
+const result = await essentials.getCommandExecutor().run('ls -la');
+
+// 使用网络搜索技能
+const searchResults = await essentials.getWebOperations().search('AI tools');
 ```
 
 ## 📁 项目结构
 ```
 agent-essential-skills/
 ├── README.md
-├── package.json
 ├── SKILL.md
+├── package.json
+├── .github/workflows/
+│   └── publish-to-clawhub.yml
 ├── src/
-│   ├── skills/
-│   │   ├── file-operations.js
-│   │   ├── command-executor.js
-│   │   ├── web-search.js
-│   │   └── session-manager.js
-│   └── examples/
-│       └── basic-usage.js
+│   ├── index.js              # 主入口文件
+│   └── skills/
+│       ├── file-operations.js # 文件操作技能
+│       ├── command-executor.js # 命令行执行技能
+│       ├── web-operations.js  # 网络操作技能
+│       ├── session-manager.js # 会话管理技能
+│       └── memory-manager.js  # 内存管理技能
 └── tests/
     └── basic.test.js
 ```
@@ -88,13 +111,25 @@ agent-essential-skills/
 
 ## 📄 许可证
 
-MIT License
+MIT License - 详见LICENSE文件
 
 ## 🆘 支持
 
-- 问题报告: GitHub Issues
-- 讨论: GitHub Discussions
+- 问题报告: [GitHub Issues](https://github.com/opencc2026/agent-essential-skills/issues)
+- 讨论: [GitHub Discussions](https://github.com/opencc2026/agent-essential-skills/discussions)
 - 文档: 项目Wiki
+
+## 🔄 自动发布
+
+本项目使用GitHub Actions自动发布到ClawHub。每次推送到main分支时，会自动：
+1. 运行测试
+2. 验证技能结构
+3. 发布到ClawHub
+4. 创建GitHub发布版本
+
+### 设置自动发布
+1. 在GitHub仓库设置中添加 `CLAWHUB_TOKEN` 密钥
+2. 每次推送到main分支会自动触发发布流程
 
 ---
 
