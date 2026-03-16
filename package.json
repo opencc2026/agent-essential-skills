@@ -1,0 +1,64 @@
+{
+  "name": "agent-essential-skills",
+  "version": "0.1.0",
+  "description": "一个包含Agent开发必备基础技能的技能包，帮助开发者快速构建功能完整的AI Agent",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint src/**/*.js",
+    "lint:fix": "eslint src/**/*.js --fix",
+    "format": "prettier --write \"src/**/*.js\"",
+    "build": "npm run lint && npm test",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "agent",
+    "skills",
+    "essential",
+    "tools",
+    "ai",
+    "development",
+    "openclaw",
+    "clawhub"
+  ],
+  "author": "opencc2026 <opencc2026@hotmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/opencc2026/agent-essential-skills.git"
+  },
+  "bugs": {
+    "url": "https://github.com/opencc2026/agent-essential-skills/issues"
+  },
+  "homepage": "https://github.com/opencc2026/agent-essential-skills#readme",
+  "engines": {
+    "node": ">=14.0.0",
+    "npm": ">=6.0.0"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.1",
+    "winston": "^3.11.0",
+    "joi": "^17.11.0",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "eslint": "^8.53.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.29.0",
+    "prettier": "^3.1.0",
+    "nodemon": "^3.0.1"
+  },
+  "files": [
+    "src/",
+    "README.md",
+    "SKILL.md",
+    "LICENSE",
+    "package.json"
+  ]
+}
